@@ -22,12 +22,13 @@ export function dirname(url) {
  * @param port The port for the http server.
  */
 export async function startProject(entrypointFilePath, {
-  buildPath = path.resolve(path.dirname(entrypointFilePath)),
+  buildPath = path.dirname(entrypointFilePath),
   port = 8000,
   quiet = false
 } = {}) {
-  await generateFiles({entrypointFilePath, buildPath, quiet})
-  await startServer({port, baseDirectory: buildPath, defaultPath: entrypointHtml, quiet})
+  const absoluteBuildPath = path.resolve(buildPath)
+  await generateFiles({entrypointFilePath, absoluteBuildPath, quiet})
+  await startServer({port, baseDirectory: absoluteBuildPath, defaultPath: entrypointHtml, quiet})
 }
 
 async function generateFiles({entrypointFilePath, buildPath, quiet}) {

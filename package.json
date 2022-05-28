@@ -1,5 +1,6 @@
 {
   "type": "module",
+  "name": "web-project-template",
   "version": "1.0.0",
   "dependencies": {
     "webpack": "^5.72.1"

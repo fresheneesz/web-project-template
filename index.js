@@ -31,17 +31,18 @@ export async function startProject(entrypointFilePath, {
 }
 
 async function generateFiles({entrypointFilePath, buildPath, quiet}) {
-  await generateWebpackBundle({entrypointFilePath, buildPath, quiet})
-  const html = createHtml({generatedEntrypointPath: "./"+'entrypoint.js'})
+  const generatedEntrypointName = path.parse(entrypointFilePath).name+'.generated.js'
+  await generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, quiet})
+  const html = createHtml({generatedEntrypointPath: "./"+generatedEntrypointName})
   await writeFile(path.join(buildPath, entrypointHtml), html)
 }
 
-async function generateWebpackBundle({entrypointFilePath, buildPath, quiet}) {
+async function generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, quiet}) {
   return new Promise(function(resolve, reject) {
     webpack({
       entry: path.resolve(entrypointFilePath),
       output: {
-        filename: 'entrypoint.js',
+        filename: generatedEntrypointName,
         path: buildPath,
       },
     }, (err, stats) => { // [Stats Object](#stats-object)

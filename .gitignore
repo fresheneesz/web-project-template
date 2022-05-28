@@ -1,1 +1,5 @@
 node_modules
+entrypoint.html
+entrypoint.generated.js
+entrypoint.js
+run.js

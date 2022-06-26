@@ -3,6 +3,7 @@ import {fileURLToPath, parse} from "url"
 import {createReadStream} from "fs"
 import {writeFile, mkdir} from "fs/promises"
 import path from "path"
+import mime from "mime"
 import webpack from "webpack"
 
 const entrypointHtml = 'entrypoint.html'
@@ -27,11 +28,12 @@ export async function startProject(entrypointFilePath, {
   quiet = false
 } = {}) {
   const absoluteBuildPath = path.resolve(buildPath)
-  await generateFiles({entrypointFilePath, absoluteBuildPath, quiet})
+  await generateFiles({entrypointFilePath, buildPath:absoluteBuildPath, quiet})
   await startServer({port, baseDirectory: absoluteBuildPath, defaultPath: entrypointHtml, quiet})
 }
 
 async function generateFiles({entrypointFilePath, buildPath, quiet}) {
+  console.log(buildPath)
   const generatedEntrypointName = path.parse(entrypointFilePath).name+'.generated.js'
   await generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, quiet})
   const html = createHtml({generatedEntrypointPath: "./"+generatedEntrypointName})
@@ -93,14 +95,15 @@ function startServer({port, baseDirectory, defaultPath, quiet}) {
       var fileStream = createReadStream(fsPath)
       fileStream.pipe(response)
       fileStream.on('open', function() {
-         response.writeHead(200)
+        response.setHeader("Content-Type", mime.getType(fsPath));
+        response.writeHead(200)
       })
       fileStream.on('error',function(e) {
         if (!quiet) {
            console.log("file doesn't exist: "+e)
         }
-         response.writeHead(404)     // assume the file doesn't exist
-         response.end()
+        response.writeHead(404)     // assume the file doesn't exist
+        response.end()
       })
     } catch(e) {
       response.writeHead(500)

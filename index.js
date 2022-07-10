@@ -25,30 +25,33 @@ export function dirname(url) {
 export async function startProject(entrypointFilePath, {
   buildPath = 'build',
   port = 8000,
+  webpackConfig = {},
   quiet = false
 } = {}) {
   const absoluteBuildPath = path.resolve(buildPath)
-  await generateFiles({entrypointFilePath, buildPath:absoluteBuildPath, quiet})
+  await generateFiles({entrypointFilePath, buildPath:absoluteBuildPath, webpackConfig, quiet})
   await startServer({port, baseDirectory: absoluteBuildPath, defaultPath: entrypointHtml, quiet})
 }
 
-async function generateFiles({entrypointFilePath, buildPath, quiet}) {
-  console.log(buildPath)
+async function generateFiles({entrypointFilePath, buildPath, webpackConfig, quiet}) {
   const generatedEntrypointName = path.parse(entrypointFilePath).name+'.generated.js'
-  await generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, quiet})
+  await generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, webpackConfig, quiet})
   const html = createHtml({generatedEntrypointPath: "./"+generatedEntrypointName})
   await writeFile(path.join(buildPath, entrypointHtml), html)
 }
 
-async function generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, quiet}) {
-  return new Promise(function(resolve, reject) {
-    webpack({
-      entry: path.resolve(entrypointFilePath),
-      output: {
-        filename: generatedEntrypointName,
-        path: buildPath,
-      },
-    }, (err, stats) => { // [Stats Object](#stats-object)
+async function generateWebpackBundle({entrypointFilePath, buildPath, generatedEntrypointName, quiet, webpackConfig}) {
+  if (webpackConfig.entry || webpackConfig.output?.filename || webpackConfig.output?.output) {
+    throw new Error("Either `entry`, `filename`, or `output` are contained in the passed webpack config, which conflict" +
+      " with the options passed to startProject.")
+  }
+  return new Promise(async function(resolve, reject) {
+    webpackConfig.entry = path.resolve(entrypointFilePath)
+    if(!webpackConfig.output) webpackConfig.output = {}
+    webpackConfig.output.filename = generatedEntrypointName
+    webpackConfig.output.path = buildPath
+
+    webpack(webpackConfig, (err, stats) => { // [Stats Object](#stats-object)
       if (err) {
         return reject(err.stack)
       }
@@ -91,7 +94,7 @@ function startServer({port, baseDirectory, defaultPath, quiet}) {
 
       // need to use path.normalize so people can't access directories underneath baseDirectory
       var fsPath = baseDirectory+path.normalize(pathname)
-      console.log(fsPath)
+      if (!quiet) console.log(fsPath)
 
       var fileStream = createReadStream(fsPath)
       fileStream.pipe(response)
@@ -101,7 +104,7 @@ function startServer({port, baseDirectory, defaultPath, quiet}) {
       })
       fileStream.on('error',function(e) {
         if (!quiet) {
-           console.log("file doesn't exist: "+e)
+           console.error("file doesn't exist: "+e)
         }
         response.writeHead(404)     // assume the file doesn't exist
         response.end()
@@ -109,13 +112,11 @@ function startServer({port, baseDirectory, defaultPath, quiet}) {
     } catch(e) {
       response.writeHead(500)
       response.end()     // end the response so browsers don't hang
-      console.log(e.stack)
+      console.error(e.stack)
     }
   }).listen(port)
 
-  if (!quiet) {
-    console.log("Listing on http port "+port)
-  }
+  if (!quiet) console.log("Listing on http port "+port)
 }
 
 async function exists() {

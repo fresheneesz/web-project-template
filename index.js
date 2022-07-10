@@ -23,7 +23,7 @@ export function dirname(url) {
  * @param port The port for the http server.
  */
 export async function startProject(entrypointFilePath, {
-  buildPath = path.dirname(entrypointFilePath),
+  buildPath = 'build',
   port = 8000,
   quiet = false
 } = {}) {
@@ -54,7 +54,8 @@ async function generateWebpackBundle({entrypointFilePath, buildPath, generatedEn
       }
       const info = stats.toJson();
       if (stats.hasErrors()) {
-        return reject(new Error("Webpack compilation errors:\n"+info.errors))
+        const errorOutput = info.errors.map(errObj => errObj.stack || errObj.message)
+        return reject(new Error("Webpack compilation errors:\n"+errorOutput))
       }
       if (!quiet && stats.hasErrors()) {
         console.warn("Webpack compilation warnings:\n"+info.warnings)

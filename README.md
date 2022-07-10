@@ -15,6 +15,6 @@ startProject("entrypoint.js")
 **`startProject(entrypointFilePath, {buildPath, port, quiet})`** - Generates an html entrypoint file and runs a server to serve it. 
 
 * `entrypointFilePath` 
-* `buildPath` - The path where generated files will be put.
-* `port` - The port the server will run on.
-* `quiet` - Set to true if you want to turn off internal console logs that display certain things.
+* `buildPath` - *Default: `"./build"`*. The path where generated files will be put. 
+* `port` - *Default: `8000`*. The port the server will run on. 
+* `quiet` - *Default: `false`*. Set to true if you want to turn off internal console logs that display certain things.
